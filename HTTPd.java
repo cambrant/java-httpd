@@ -13,8 +13,12 @@ import java.io.FileReader;
 import java.io.FileNotFoundException;
 
 public class HTTPd {
-    public HTTPd()
+    private String rootDir;
+
+    public HTTPd(String webRootDir)
     {
+        rootDir = webRootDir;
+
         try {
             System.out.println("Starting server...");
 
@@ -23,9 +27,9 @@ public class HTTPd {
 			boolean running = true;
             while(running) {
                 Socket clientSocket = serverSocket.accept();
-                System.out.println("New client connected!");
+                System.out.println("New client connected: " + clientSocket.getInetAddress());
 
-                ClientThread cThread = new ClientThread(clientSocket);
+                ClientThread cThread = new ClientThread(clientSocket, rootDir);
                 cThread.start();
             }
 
@@ -46,9 +50,10 @@ public class HTTPd {
             super();
         }
 
-        ClientThread(Socket s)
+        ClientThread(Socket s, String rootDir)
         {
             clientSocket = s;
+            rootDir = rootDir;
         }
 
         public void start()
@@ -67,8 +72,8 @@ public class HTTPd {
 					String clientCommand = in.readLine();
 					String fileName = parseFilenameFromURL(clientCommand);
 
-					System.out.println("Client command: " + clientCommand);
-					System.out.println("File name: " + fileName);
+					System.out.println("Client HTTP command: " + clientCommand);
+					System.out.println("Returning file: " + fileName);
 
 					String fileContents = readFile(fileName);
 					if(! fileContents.equals("404")) {
@@ -124,7 +129,7 @@ public class HTTPd {
 			BufferedReader input;
 
 			try {
-				FileReader fileReader = new FileReader(fileName);
+				FileReader fileReader = new FileReader(rootDir + fileName);
 				input = new BufferedReader(fileReader);
 			} catch (FileNotFoundException e) {
 				// e.printStackTrace();
@@ -151,6 +156,24 @@ public class HTTPd {
 
     public static void main(String[] args)
 	{
-        new HTTPd();
+        String webRootDir = "";
+
+        if (args.length == 2) {
+            if (args[0].equals("-r")) {
+                webRootDir = args[1];
+
+                // Add trailing slash.
+                if (webRootDir.substring(webRootDir.length() - 1) != "/") {
+                    webRootDir += '/';
+                }
+            } else {
+                System.out.println("Usage: java HTTPd [-r <root directory>]");
+                System.exit(1);
+            }
+        } else {
+            webRootDir = "./";
+        }
+
+        new HTTPd(webRootDir);
     }
 }

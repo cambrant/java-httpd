@@ -7,5 +7,6 @@ javac HTTPd.java
 
 if [ -f HTTPd.class ]; then
     echo
-    java HTTPd
+    # java -verbose:class -verbose:gc -verbose:jni HTTPd
+    java HTTPd -r ./
 fi
